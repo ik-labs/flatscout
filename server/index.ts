@@ -5,6 +5,12 @@ import { logger } from "hono/logger";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import path from "node:path";
+import searchListings from "./routes/search-listings";
+import scrapeListing from "./routes/scrape-listing";
+import deepDive from "./routes/deep-dive";
+import verifyNeighborhood from "./routes/verify-neighborhood";
+import interactPage from "./routes/interact-page";
+import getSignedUrl from "./routes/get-signed-url";
 
 const app = new Hono();
 
@@ -24,19 +30,13 @@ app.get("/api/health", (c) => {
   return c.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// --- Mount API routes here (Phase 1) ---
-// import searchListings from "./routes/search-listings";
-// import scrapeListing from "./routes/scrape-listing";
-// import deepDive from "./routes/deep-dive";
-// import verifyNeighborhood from "./routes/verify-neighborhood";
-// import interactPage from "./routes/interact-page";
-// import getSignedUrl from "./routes/get-signed-url";
-// app.route("/", searchListings);
-// app.route("/", scrapeListing);
-// app.route("/", deepDive);
-// app.route("/", verifyNeighborhood);
-// app.route("/", interactPage);
-// app.route("/", getSignedUrl);
+// API routes
+app.route("/", getSignedUrl);
+app.route("/", searchListings);
+app.route("/", scrapeListing);
+app.route("/", deepDive);
+app.route("/", verifyNeighborhood);
+app.route("/", interactPage);
 
 // In production, serve the Vite React build as static files
 if (process.env.NODE_ENV === "production") {

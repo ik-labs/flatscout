@@ -10,11 +10,15 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.11",
+    "@mendable/firecrawl-js": "^4.17.0",
     "dotenv": "^17.3.1",
-    "hono": "^4.12.9"
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.12.9",
+    "postgres": "^3.4.8"
   },
   "devDependencies": {
     "@types/node": "^24.12.0",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3"
   }
