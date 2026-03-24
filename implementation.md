@@ -10,32 +10,32 @@
 
 **Goal:** Scaffold project, configure env vars, verify all API keys work.
 
-- [ ] Create monorepo structure with `client/` and `server/` directories
-- [ ] Initialize Vite React app in `client/`
+- [x] Create monorepo structure with `client/` and `server/` directories
+- [x] Initialize Vite React app in `client/`
   ```bash
   pnpm create vite client --template react-ts
   ```
-- [ ] Initialize Hono backend in `server/`
+- [x] Initialize Hono backend in `server/`
   ```bash
   mkdir server && cd server && pnpm init
   pnpm add hono @hono/node-server @mendable/firecrawl-js postgres drizzle-orm dotenv
   pnpm add -D tsx typescript @types/node drizzle-kit
   ```
-- [ ] Install frontend dependencies
+- [x] Install frontend dependencies (note: using `@elevenlabs/react` instead of deprecated `@11labs/react`)
   ```bash
   cd client
   pnpm add @11labs/react react-router-dom
   pnpm add -D tailwindcss @tailwindcss/vite
   ```
-- [ ] Initialize shadcn/ui in `client/`
+- [ ] Initialize shadcn/ui in `client/` *(interactive CLI — run manually)*
   ```bash
   pnpm dlx shadcn@latest init
   ```
-- [ ] Install ElevenLabs UI components in `client/`
+- [ ] Install ElevenLabs UI components in `client/` *(interactive CLI — run manually)*
   ```bash
   pnpm dlx @elevenlabs/cli@latest components add conversation orb waveform transcript-viewer voice-button
   ```
-- [ ] Create `.env` in `server/` with all required keys:
+- [x] Create `.env` in `server/` with all required keys:
   ```env
   FIRECRAWL_API_KEY=
   ELEVENLABS_AGENT_ID=
@@ -43,11 +43,11 @@
   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/flatscout
   PORT=3000
   ```
-- [ ] Create `.env` in `client/` for Vite:
+- [x] Create `.env` in `client/` for Vite:
   ```env
   VITE_API_URL=http://localhost:3000
   ```
-- [ ] Create `docker-compose.yml` for local Postgres
+- [x] Create `docker-compose.yml` for local Postgres
   ```yaml
   services:
     db:
@@ -61,9 +61,9 @@
   volumes:
     pgdata:
   ```
-- [ ] Start Postgres, verify connection
-- [ ] Create project directory structure (see below)
-- [ ] Verify Firecrawl API key works: quick test search via curl or script
+- [ ] Start Postgres, verify connection *(run `docker compose up -d` when ready)*
+- [x] Create project directory structure (see below)
+- [ ] Verify Firecrawl API key works *(needs API key in `.env`)*
 
 ### Directory Structure
 ```
