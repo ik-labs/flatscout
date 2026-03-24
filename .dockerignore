@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.git/
+.gitignore
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.md
+.DS_Store
+.vscode/
+.idea/
+pgdata/
+caddy_data/
+caddy_config/
+*.log
