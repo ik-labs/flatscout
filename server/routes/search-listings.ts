@@ -1,16 +1,12 @@
 import { Hono } from "hono";
-import { safeFirecrawlAgent, safeFirecrawlExtract, safeFirecrawlSearch } from "../lib/firecrawl";
-import { DISCOVERY_LISTINGS_SCHEMA } from "../lib/schemas";
+import { safeFirecrawlSearch } from "../lib/firecrawl";
 import { getOrCreateSession } from "../lib/session";
 import {
-  buildAgentPrompt,
-  buildExtractPrompt,
   buildSearchQueries,
   expandTargetCities,
-  extractStructuredListings,
+  filterSearchResults,
   fuseAndRankListings,
   normalizeSearchListings,
-  normalizeStructuredListings,
   type SearchCriteria,
 } from "../lib/retrieval";
 
@@ -33,72 +29,23 @@ async function runRetrievalPass(criteria: SearchCriteria) {
         location: job.location,
         country: "US",
         tbs: "qdr:m",
-        timeout: 30000,
+        timeout: 15000,
         ignoreInvalidURLs: true,
-        scrapeOptions: {
-          formats: ["markdown", "summary"],
-          onlyMainContent: true,
-          timeout: 15000,
-        },
       })
     )
   );
   const rawSearchResults = searchResults.flatMap((result) => result ?? []);
-  const seedUrls = Array.from(
-    new Set(
-      rawSearchResults
-        .map((result) => (result && typeof result.url === "string" ? result.url : ""))
-        .filter(Boolean)
-    )
-  ).slice(0, 8);
-
-  const extractPromise = safeFirecrawlExtract({
-    urls: seedUrls,
-    prompt: buildExtractPrompt(targets, criteria),
-    schema: DISCOVERY_LISTINGS_SCHEMA,
-    enableWebSearch: true,
-    showSources: true,
-    timeout: 45,
-    scrapeOptions: {
-      onlyMainContent: true,
-      formats: ["markdown"],
-      timeout: 15000,
-    },
-  });
-
-  const agentPromise = safeFirecrawlAgent({
-    urls: seedUrls,
-    prompt: buildAgentPrompt(targets, criteria),
-    schema: DISCOVERY_LISTINGS_SCHEMA,
-    model: "spark-1-mini",
-    maxCredits: 600,
-    timeout: 45,
-  });
-
-  const [extractResults, agentResults] = await Promise.all([extractPromise, agentPromise]);
+  const filteredSearchResults = filterSearchResults(rawSearchResults);
 
   const normalizedSearch = normalizeSearchListings(
-    rawSearchResults,
+    filteredSearchResults,
     criteria,
     targets
   );
-  const normalizedExtract = normalizeStructuredListings(
-    extractStructuredListings(extractResults),
-    "extract",
-    criteria,
-    targets
-  );
-  const normalizedAgent = normalizeStructuredListings(
-    extractStructuredListings(agentResults),
-    "agent",
-    criteria,
-    targets
-  );
-
   const listings = fuseAndRankListings(
     normalizedSearch,
-    normalizedExtract,
-    normalizedAgent,
+    [],
+    [],
     criteria,
     targets
   );
@@ -109,8 +56,8 @@ async function runRetrievalPass(criteria: SearchCriteria) {
     listings,
     counts: {
       searchCandidates: normalizedSearch.length,
-      extractCandidates: normalizedExtract.length,
-      agentCandidates: normalizedAgent.length,
+      extractCandidates: 0,
+      agentCandidates: 0,
     },
   };
 }
@@ -167,7 +114,7 @@ app.post("/api/search-listings", async (c) => {
       broadened,
       target_cities: finalPass.targets.map((target) => target.name),
       counts: finalPass.counts,
-      summary: `Merged ${finalPass.counts.searchCandidates} search, ${finalPass.counts.extractCandidates} extract, and ${finalPass.counts.agentCandidates} agent candidates into ${finalListings.length} ranked listings.`,
+      summary: `Ranked ${finalListings.length} listings from ${finalPass.counts.searchCandidates} filtered search candidates across ${finalPass.targets.length} target cities.`,
     },
   });
 });

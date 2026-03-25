@@ -24,6 +24,10 @@ export const firecrawl = new Proxy({} as InstanceType<typeof FirecrawlApp>, {
   },
 });
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Wrapper around firecrawl.search that catches errors and returns null
  * instead of throwing. This allows Promise.allSettled patterns to work
@@ -61,8 +65,23 @@ export async function safeFirecrawlAgent(
 ): Promise<Record<string, any> | null> {
   try {
     const fc = getFirecrawl();
-    const result = await fc.agent(args as any);
-    return result as Record<string, any>;
+    const timeoutMs = Math.max(10_000, Number(args.timeout ?? 25) * 1000);
+    const pollInterval = Math.max(1000, Number(args.pollInterval ?? 2000));
+    const started = await fc.startAgent(args as any);
+
+    if (!started?.id) {
+      return started as Record<string, any>;
+    }
+
+    const deadline = Date.now() + timeoutMs;
+    let latest = await fc.getAgentStatus(started.id);
+
+    while (latest?.status === "processing" && Date.now() < deadline) {
+      await sleep(pollInterval);
+      latest = await fc.getAgentStatus(started.id);
+    }
+
+    return latest as Record<string, any>;
   } catch (error: any) {
     console.error("[Firecrawl] Agent failed:", error.message);
     return null;

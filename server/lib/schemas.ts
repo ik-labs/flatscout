@@ -135,3 +135,33 @@ export const DISCOVERY_LISTINGS_SCHEMA = {
     },
   },
 };
+
+export const DISCOVERY_SEED_SCHEMA = {
+  type: "object",
+  properties: {
+    listings: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          title: { type: "string" },
+          url: { type: "string" },
+          address: { type: "string" },
+          city: { type: "string" },
+          source_site: { type: "string" },
+          rent: { type: "number" },
+          bedrooms: { type: "number" },
+          sqft: { type: "number" },
+          pet_policy: { type: "string" },
+          parking: { type: "string" },
+          laundry: { type: "string" },
+          availability_summary: {
+            type: "array",
+            items: { type: "string" },
+          },
+        },
+      },
+    },
+  },
+};

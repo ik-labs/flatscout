@@ -134,6 +134,15 @@ function normalizeUrl(url: string | undefined) {
   return url.replace(/[?#].*$/, "").replace(/\/$/, "").toLowerCase();
 }
 
+function getHostname(url: string | undefined) {
+  if (!url) return "";
+  try {
+    return new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
 function extractSourceSite(url: string): string {
   try {
     const hostname = new URL(url).hostname.replace("www.", "");
@@ -149,6 +158,93 @@ function extractSourceSite(url: string): string {
   }
 }
 
+const BLOCKED_SEED_HOSTS = [
+  "facebook.com",
+  "m.facebook.com",
+  "instagram.com",
+  "x.com",
+  "twitter.com",
+  "linkedin.com",
+  "tiktok.com",
+];
+
+const LOW_CONFIDENCE_HOSTS = ["craigslist.org"];
+
+const PREFERRED_SEED_HOSTS = [
+  "apartments.com",
+  "zillow.com",
+  "redfin.com",
+  "realtor.com",
+  "trulia.com",
+];
+
+function isSeedUrlCandidate(url: string, title = "") {
+  const normalized = normalizeUrl(url);
+  const hostname = getHostname(url);
+  const lowerTitle = title.toLowerCase();
+
+  if (!normalized || !hostname) return false;
+  if (BLOCKED_SEED_HOSTS.some((blocked) => hostname.includes(blocked))) return false;
+
+  if (
+    /(apartments for rent under|apartments for rent in|homes for sale|housing\b|sublets? & temporary)/i.test(
+      lowerTitle
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    /\/search(\/|$)|\/under-\d+\/?$|\/\d-bedrooms?\/?$|\/studios?\/?$|\/rooms-for-rent\/?$|\/sub(?:\/|$)|\/groups\/|\/posts\/|\/marketplace\//.test(
+      normalized
+    )
+  ) {
+    return false;
+  }
+
+  if (/-county-[a-z]{2}$/.test(normalized)) return false;
+
+  return true;
+}
+
+function seedUrlScore(url: string, title = "") {
+  const hostname = getHostname(url);
+  const normalized = normalizeUrl(url);
+  let score = 0;
+
+  if (PREFERRED_SEED_HOSTS.some((preferred) => hostname.includes(preferred))) score += 30;
+  if (LOW_CONFIDENCE_HOSTS.some((low) => hostname.includes(low))) score -= 20;
+  if (/\/homedetails\/|\/unit-|\/[a-z0-9-]{6,}\/?$/.test(normalized)) score += 12;
+  if (/apartment-homes|apartments|residences|villas|commons|tower|place/i.test(title)) score += 8;
+  if (/under-\d+|1-bedrooms?|2-bedrooms?|studios?/i.test(normalized)) score -= 16;
+
+  return score;
+}
+
+export function selectSeedUrls(rawResults: Array<Record<string, unknown>>) {
+  return Array.from(
+    new Map(
+      rawResults
+        .map((result) => {
+          const url = typeof result.url === "string" ? result.url : "";
+          const title = typeof result.title === "string" ? result.title : "";
+          return { url, title, score: seedUrlScore(url, title) };
+        })
+        .filter((item) => item.url && isSeedUrlCandidate(item.url, item.title))
+        .sort((a, b) => b.score - a.score)
+        .map((item) => [normalizeUrl(item.url), item.url] as const)
+    ).values()
+  ).slice(0, 6);
+}
+
+export function filterSearchResults(rawResults: Array<Record<string, unknown>>) {
+  return rawResults.filter((result) => {
+    const url = typeof result.url === "string" ? result.url : "";
+    const title = typeof result.title === "string" ? result.title : "";
+    return isSeedUrlCandidate(url, title);
+  });
+}
+
 function parseRent(text: string): number | undefined {
   const matches = [...text.matchAll(/\$\s?([\d,]{3,6})/g)]
     .map((match) => Number.parseInt(match[1].replace(/,/g, ""), 10))
@@ -157,6 +253,8 @@ function parseRent(text: string): number | undefined {
 }
 
 function parseBedrooms(text: string): number | undefined {
+  if (/\bstudio\b/i.test(text)) return 0;
+
   const numeric = text.match(/(\d+)\s*(?:bed|br|bedroom)/i);
   if (numeric) return Number(numeric[1]);
 
@@ -266,6 +364,7 @@ function mentionsDisallowedKnownCity(listing: InternalListing, targets: TargetCi
 function hardRejectReason(listing: InternalListing, criteria: SearchCriteria, targets: TargetCity[]) {
   const text = `${listing.title} ${listing.address || ""} ${listing.rawText || ""} ${listing.petPolicy || ""} ${listing.parking || ""} ${listing.laundry || ""}`.toLowerCase();
   const normalizedUrl = normalizeUrl(listing.url);
+  const hostname = getHostname(listing.url);
   const requirements = getRequirementFlags(criteria);
   const explicitBedrooms = listing.bedrooms ?? parseBedrooms(text);
 
@@ -276,12 +375,35 @@ function hardRejectReason(listing: InternalListing, criteria: SearchCriteria, ta
   }
 
   if (
-    /(apartments for rent in|sublets? & temporary|housing\b)/i.test(text) ||
+    /(apartments for rent in|apartments for rent under|sublets? & temporary|housing\b)/i.test(text) ||
     /\/search\//.test(normalizedUrl) ||
+    /\/transit\//.test(normalizedUrl) ||
     /\/sub(?:\/|$)/.test(normalizedUrl) ||
-    /\/\d+_p\/?$/.test(normalizedUrl)
+    /\/\d+_p\/?$/.test(normalizedUrl) ||
+    /\/under-\d+\/?$|\/\d-bedrooms?\/?$|\/studios?\/?$|\/rooms-for-rent\/?$|\/groups\/|\/posts\/|\/marketplace\//.test(
+      normalizedUrl
+    )
   ) {
     return "directory-page";
+  }
+
+  if (/\bapartments?\s+for\s+rent\s+near\b/i.test(text)) {
+    return "directory-page";
+  }
+
+  if (
+    BLOCKED_SEED_HOSTS.some((blocked) => hostname.includes(blocked)) ||
+    LOW_CONFIDENCE_HOSTS.some((low) => hostname.includes(low))
+  ) {
+    return "low-confidence-source";
+  }
+
+  if (/\btownhouse\b/.test(text) && criteria.bedrooms === 1 && explicitBedrooms === undefined) {
+    return "property-type-mismatch";
+  }
+
+  if (!listing.address && !/apartment|residence|unit|suite|home/i.test(text)) {
+    return "weak-identity";
   }
 
   if (explicitBedrooms !== undefined && explicitBedrooms !== criteria.bedrooms) {
@@ -355,15 +477,18 @@ function scoreListing(listing: InternalListing, criteria: SearchCriteria, target
 
   if (criteria.petFriendly) {
     if (/\bpet[-\s]?friendly\b|\bdogs?\b|\bcats?\b/.test(text)) score += 14;
+    else score -= 8;
   }
 
   if (requirements.requiresParking) {
     if (/\bparking\b|\bgarage\b|\bcarport\b/.test(text)) score += 12;
+    else score -= 8;
     if (/\bno parking\b/.test(text)) score -= 6;
   }
 
   if (requirements.requiresInUnitLaundry) {
     if (/\bin[-\s]?unit\b|\bwasher\/dryer\b/.test(text)) score += 15;
+    else score -= 10;
     if (/\bshared laundry\b|\bon-site laundry\b/.test(text)) score -= 8;
   }
 
@@ -595,7 +720,7 @@ export function buildSearchQueries(target: TargetCity, criteria: SearchCriteria)
   return [
     `${target.name} ${bedroomPhrase} site:apartments.com`,
     `${target.name} ${bedroomPhrase} rentals site:zillow.com`,
-    `${target.name} apartment community ${preferenceQuery}`.trim(),
+    `${target.name} ${bedroomPhrase} rent site:redfin.com ${preferenceQuery}`.trim(),
   ];
 }
 
