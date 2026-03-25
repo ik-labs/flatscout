@@ -25,8 +25,14 @@ export function ComparisonTable({ listings }: ComparisonTableProps) {
 
   return (
     <div className="rounded-lg border border-border bg-card animate-in fade-in slide-in-from-bottom-2">
-      <div className="border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold">Top Picks Comparison</h3>
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div>
+          <h3 className="text-sm font-semibold">Top Picks Comparison</h3>
+          <p className="text-xs text-muted-foreground">FlatScout has ranked the strongest shortlist</p>
+        </div>
+        <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-[10px] uppercase tracking-[0.18em] text-emerald-300">
+          Top 3 Ready
+        </Badge>
       </div>
       <div className="space-y-3 p-3 md:hidden">
         {listings.map((listing, i) => (

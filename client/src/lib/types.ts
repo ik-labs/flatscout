@@ -1,3 +1,5 @@
+export type ListingStage = "discovered" | "details_pulled" | "verified" | "ranked";
+
 export interface Listing {
   id: string;
   title: string;
@@ -15,6 +17,11 @@ export interface Listing {
   petPolicy?: string;
   parking?: string;
   laundry?: string;
+  stage?: ListingStage;
+  verificationSummary?: string[];
+  deepDiveNotes?: string[];
+  liveCheckSummary?: string;
+  lastUpdatedAt?: string;
 }
 
 export interface Warning {
@@ -32,6 +39,18 @@ export interface Warning {
 export interface SearchStatus {
   status: "idle" | "searching" | "filtering" | "scraping" | "verifying" | "complete" | "error";
   message: string;
+}
+
+export interface DashboardEvent {
+  id: string;
+  phase: "search" | "scrape" | "verify" | "deep_dive" | "interact" | "rank";
+  status: "started" | "succeeded" | "failed";
+  title: string;
+  detail: string;
+  toolName: string;
+  listingId?: string;
+  sourceSite?: string;
+  timestamp: Date;
 }
 
 export interface TranscriptMessage {

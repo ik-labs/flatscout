@@ -155,6 +155,8 @@ Dashboard shows the full shortlist with all data, links, and the agent's notes.
 │                                                      │
 │  Client Tools (update frontend):                     │
 │    - add_listing_card                                │
+│    - update_listing_card                             │
+│    - log_activity_event                              │
 │    - update_comparison_table                         │
 │    - show_warning                                    │
 │    - set_search_status                               │
@@ -199,8 +201,10 @@ Store all preferences using dynamic variables.
 3. Narrate the initial count: "Found X listings across [sites]. Filtering now..."
 4. For each promising listing, call `scrape_listing` to get full details.
 5. Use `add_listing_card` client tool to push each qualifying listing to the dashboard.
-6. Narrate key findings as you go — don't silently process.
-7. If initial results are thin, broaden the search (increase budget by 10%, expand area).
+6. After each major tool action, use `log_activity_event` so the dashboard shows visible investigation progress.
+7. After any scrape, verification, deep dive, or live check that changes a listing, use `update_listing_card`.
+8. Narrate key findings as you go — don't silently process.
+9. If initial results are thin, broaden the search (increase budget by 10%, expand area).
 
 ### Phase 3: VERIFY (goal: catch red flags, confirm claims)
 For top 3-5 listings:
@@ -222,6 +226,11 @@ For top 3-5 listings:
 - Use `verify_neighborhood` for your top 3 — always. Renters deserve verified info.
 - When you find contradictions (listing says "quiet" but reviews say "loud"), always flag it.
 - Use `interact_with_page` sparingly — only when checking availability or prices that might be dynamic.
+- Do not scrape more than 3 listings before giving the user an update.
+- As soon as 2 viable listings are confirmed, share partial results.
+- If a tool fails, move on to the next candidate instead of retrying repeatedly.
+- After every major server-tool action, emit `log_activity_event` with a human-readable title and detail.
+- After any scrape, verification, deep dive, or live interaction that changes listing quality, emit `update_listing_card`.
 
 ## GUARDRAILS
 - Never invent listing data. If you don't know, say so and search.
@@ -302,7 +311,7 @@ Body Parameters:
   - action (string, required): What to do, e.g. "Check availability for 1BR units" or "Click on floor plans tab"
 ```
 
-### 3.4 Client Tools (4 tools, executed on frontend)
+### 3.4 Client Tools (6 tools, executed on frontend)
 
 #### Client Tool 1: `add_listing_card`
 ```
@@ -332,7 +341,37 @@ Parameters:
 Wait for response: false
 ```
 
-#### Client Tool 3: `show_warning`
+#### Client Tool 3: `log_activity_event`
+```
+Name: log_activity_event
+Description: Log a live dashboard event so judges can see what FlatScout is doing in real time.
+Parameters:
+  - event_id (string): Unique ID for the dashboard event
+  - phase (string): One of "search", "scrape", "verify", "deep_dive", "interact", "rank"
+  - status (string): One of "started", "succeeded", "failed"
+  - title (string): Short human-readable title like "Searching listings"
+  - detail (string): One sentence describing what happened
+  - tool_name (string): Technical tool name like "scrape_listing"
+  - listing_id (string): Associated listing ID (optional)
+  - source_site (string): Site name like "Zillow" (optional)
+Wait for response: false
+```
+
+#### Client Tool 4: `update_listing_card`
+```
+Name: update_listing_card
+Description: Enrich an existing listing card after scrape, verification, deep dive, or live interaction.
+Parameters:
+  - listing_id (string): Listing to update
+  - stage (string): One of "discovered", "details_pulled", "verified", "ranked"
+  - verification_summary (string): Comma-separated positive/neutral verification notes (optional)
+  - deep_dive_notes (string): Comma-separated building-level findings (optional)
+  - live_check_summary (string): One-line live availability/pricing result (optional)
+  - highlights (string): Comma-separated positive evidence chips to display (optional)
+Wait for response: false
+```
+
+#### Client Tool 5: `show_warning`
 ```
 Name: show_warning
 Description: Display a warning or red flag about a specific listing on the dashboard.
@@ -343,7 +382,7 @@ Parameters:
 Wait for response: false
 ```
 
-#### Client Tool 4: `set_search_status`
+#### Client Tool 6: `set_search_status`
 ```
 Name: set_search_status
 Description: Update the search status indicator on the dashboard.
