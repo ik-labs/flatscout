@@ -18,31 +18,32 @@ RUN pnpm install --frozen-lockfile
 COPY client/ client/
 COPY server/ server/
 
-# Build client (Vite) and server (TypeScript)
+# Build client (Vite) only — server runs from source via tsx
 RUN pnpm --filter client build
-RUN pnpm --filter server build
-
-# Prune dev dependencies for production
-RUN pnpm --filter server deploy --prod /app/server-prod
 
 # ---- Stage 2: Runtime ----
 FROM node:22-alpine AS runtime
 
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 WORKDIR /app
+
+# Copy workspace config
+COPY --from=build /app/package.json /app/pnpm-workspace.yaml /app/pnpm-lock.yaml ./
+COPY --from=build /app/server/package.json server/
+
+# Install server production deps only (tsx is a prod dependency)
+RUN pnpm install --prod --frozen-lockfile
 
 # Copy built client static files
 COPY --from=build /app/client/dist ./client/dist
 
-# Copy compiled server + production node_modules
-COPY --from=build /app/server-prod ./server
-COPY --from=build /app/server/dist ./server/dist
-
-# Copy server .env.example as reference (actual .env mounted at runtime)
-COPY server/.env.example ./server/.env.example
+# Copy server source (tsx runs TypeScript directly)
+COPY --from=build /app/server/ ./server/
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
 EXPOSE 3000
 
-CMD ["node", "server/dist/index.js"]
+CMD ["npx", "tsx", "server/index.ts"]
