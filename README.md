@@ -2,6 +2,13 @@
 
 FlatScout is a voice-first apartment research app. You describe your preferences, the agent searches listings, scrapes details, verifies neighborhood signals, and returns a ranked shortlist in a live dashboard.
 
+## License
+
+This project is source-available under the PolyForm Noncommercial License 1.0.0.
+Commercial use is not permitted without separate permission.
+
+See the `LICENSE` file for the repository notice and official license URL.
+
 ## Tech Stack
 
 - Frontend: React 19, Vite, TypeScript, Tailwind
