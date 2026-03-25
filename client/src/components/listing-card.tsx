@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Listing, Warning } from "@/lib/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,11 +41,51 @@ function getStageLabel(stage?: Listing["stage"]) {
   }
 }
 
+function DeepDetailSection({
+  label,
+  items,
+}: {
+  label: string;
+  items?: string[];
+}) {
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+      <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-400">
+        {label}
+      </div>
+      <div className="space-y-1.5">
+        {items.slice(0, 4).map((item, index) => (
+          <div key={`${label}-${index}`} className="text-[11px] leading-relaxed text-zinc-200">
+            • {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ListingCard({ listing, warnings }: ListingCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const evidence = [
+    ...(listing.petPolicy ? [listing.petPolicy] : []),
+    ...(listing.parking ? [listing.parking] : []),
+    ...(listing.laundry ? [listing.laundry] : []),
     ...(listing.highlights ?? []),
     ...(listing.liveCheckSummary ? [listing.liveCheckSummary] : []),
   ].filter(Boolean);
+  const hasDeepDetails = [
+    listing.feesSummary,
+    listing.petPolicySummary,
+    listing.parkingSummary,
+    listing.leaseTermsSummary,
+    listing.availabilitySummary,
+    listing.floorPlanSummary,
+    listing.amenitiesSummary,
+    listing.qualificationSummary,
+    listing.sourceProvenance,
+  ].some((items) => (items?.length ?? 0) > 0);
 
   return (
     <Card className="overflow-hidden transition-all duration-300 animate-in fade-in slide-in-from-bottom-2">
@@ -98,7 +139,7 @@ export function ListingCard({ listing, warnings }: ListingCardProps) {
 
         {evidence.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-1">
-            {evidence.slice(0, 4).map((h, i) => (
+            {Array.from(new Set(evidence)).slice(0, 5).map((h, i) => (
               <Badge key={i} variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-[10px] text-emerald-300">
                 {h}
               </Badge>
@@ -133,6 +174,42 @@ export function ListingCard({ listing, warnings }: ListingCardProps) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {hasDeepDetails && (
+          <div className="mb-3 rounded-xl border border-sky-500/15 bg-sky-500/[0.04] px-3 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-sky-300">
+                  Deep Details Available
+                </div>
+                <div className="mt-1 text-[11px] text-zinc-300">
+                  Fees, policies, parking, lease terms, and availability are structured on-card.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsExpanded((current) => !current)}
+                className="rounded-full border border-sky-400/25 bg-sky-400/10 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-sky-200 transition hover:bg-sky-400/15"
+              >
+                {isExpanded ? "Hide" : "Expand"}
+              </button>
+            </div>
+
+            {isExpanded && (
+              <div className="mt-3 grid gap-2.5">
+                <DeepDetailSection label="Fees" items={listing.feesSummary} />
+                <DeepDetailSection label="Pet Policy" items={listing.petPolicySummary} />
+                <DeepDetailSection label="Parking" items={listing.parkingSummary} />
+                <DeepDetailSection label="Lease Terms" items={listing.leaseTermsSummary} />
+                <DeepDetailSection label="Availability" items={listing.availabilitySummary} />
+                <DeepDetailSection label="Floor Plans" items={listing.floorPlanSummary} />
+                <DeepDetailSection label="Amenities" items={listing.amenitiesSummary} />
+                <DeepDetailSection label="Qualification" items={listing.qualificationSummary} />
+                <DeepDetailSection label="Evidence Sources" items={listing.sourceProvenance} />
+              </div>
+            )}
           </div>
         )}
 

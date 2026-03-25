@@ -22,6 +22,15 @@ export interface Listing {
   deepDiveNotes?: string[];
   liveCheckSummary?: string;
   lastUpdatedAt?: string;
+  feesSummary?: string[];
+  petPolicySummary?: string[];
+  parkingSummary?: string[];
+  leaseTermsSummary?: string[];
+  availabilitySummary?: string[];
+  floorPlanSummary?: string[];
+  amenitiesSummary?: string[];
+  qualificationSummary?: string[];
+  sourceProvenance?: string[];
 }
 
 export interface Warning {

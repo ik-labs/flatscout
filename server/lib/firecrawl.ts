@@ -42,3 +42,29 @@ export async function safeFirecrawlSearch(
     return null;
   }
 }
+
+export async function safeFirecrawlExtract(
+  args: Record<string, any>
+): Promise<Record<string, any> | null> {
+  try {
+    const fc = getFirecrawl();
+    const result = await fc.extract(args as any);
+    return result as Record<string, any>;
+  } catch (error: any) {
+    console.error("[Firecrawl] Extract failed:", error.message);
+    return null;
+  }
+}
+
+export async function safeFirecrawlAgent(
+  args: Record<string, any>
+): Promise<Record<string, any> | null> {
+  try {
+    const fc = getFirecrawl();
+    const result = await fc.agent(args as any);
+    return result as Record<string, any>;
+  } catch (error: any) {
+    console.error("[Firecrawl] Agent failed:", error.message);
+    return null;
+  }
+}

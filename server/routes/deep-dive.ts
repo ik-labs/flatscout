@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-import { firecrawl } from "../lib/firecrawl";
+import { safeFirecrawlExtract, firecrawl } from "../lib/firecrawl";
+import { LISTING_SCHEMA } from "../lib/schemas";
 import { getOrCreateSession } from "../lib/session";
 import { extractDomain, filterRelevantPages } from "../lib/utils";
 
@@ -15,38 +16,59 @@ app.post("/api/deep-dive", async (c) => {
     );
   }
 
-  const session = getOrCreateSession(session_id);
+  getOrCreateSession(session_id);
 
   try {
-    // Step 1: Map the domain to find all related pages
     const domain = extractDomain(listing_url);
     const mapResults = await firecrawl.map(domain, {
-      search: search_query || "floor plans pricing amenities",
+      search: search_query || "floor plans pricing amenities pet policy parking lease terms availability",
       limit: 20,
     });
 
-    // Step 2: Extract URLs and filter for relevant pages
-    const allUrls = (mapResults.links ?? []).map((link: any) =>
-      typeof link === "string" ? link : link.url
-    ).filter(Boolean) as string[];
-    const relevantUrls = filterRelevantPages(allUrls);
-
-    // Step 3: Scrape the most relevant pages (cap at 5 for credits)
-    const scrapeResults = await Promise.allSettled(
-      relevantUrls.slice(0, 5).map((url) =>
-        firecrawl.scrape(url, { formats: ["markdown"] })
+    const allUrls = (mapResults.links ?? [])
+      .map((link: unknown) =>
+        typeof link === "string"
+          ? link
+          : link && typeof link === "object" && "url" in link
+            ? String((link as { url: unknown }).url)
+            : ""
       )
-    );
+      .filter(Boolean);
 
-    const successful = scrapeResults
-      .filter((r) => r.status === "fulfilled")
-      .map((r) => (r as PromiseFulfilledResult<any>).value);
+    const relevantUrls = filterRelevantPages(allUrls);
+    const urlsToAnalyze = [listing_url, ...relevantUrls].filter(
+      (url, index, array) => array.indexOf(url) === index
+    ).slice(0, 6);
 
-    return c.json({ enriched_data: successful });
+    const extracted = await safeFirecrawlExtract({
+      urls: urlsToAnalyze,
+      prompt:
+        "Extract apartment building details relevant to renters, especially fees, pet policy, parking, lease terms, availability, floor plans, amenities, and qualification requirements.",
+      schema: LISTING_SCHEMA,
+      enableWebSearch: true,
+      showSources: true,
+      timeout: 45,
+      scrapeOptions: {
+        onlyMainContent: true,
+        formats: ["markdown"],
+        timeout: 15000,
+      },
+    });
+
+    const structured =
+      extracted && typeof extracted === "object" && "data" in extracted
+        ? (extracted.data as Record<string, unknown>)
+        : {};
+
+    return c.json({
+      listing_url,
+      analyzed_urls: urlsToAnalyze,
+      structured_data: structured,
+    });
   } catch (e: any) {
     return c.json({
       error: `Deep dive failed for ${listing_url}: ${e.message}`,
-      enriched_data: [],
+      structured_data: {},
     });
   }
 });

@@ -12,6 +12,14 @@ function parseStringList(value: unknown) {
     return value.map((item) => String(item).trim()).filter(Boolean);
   }
   if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => String(item).trim()).filter(Boolean);
+      }
+    } catch {
+      // fall through to text splitting
+    }
     return value
       .split(/\r?\n|,/)
       .map((item) => item.trim())
@@ -49,17 +57,20 @@ export function FlatScoutAgent() {
   });
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
   const [isSessionActive, setIsSessionActive] = useState(false);
+  const [isMicMuted, setIsMicMuted] = useState(false);
 
   const pushEvent = useCallback((event: DashboardEvent) => {
     setEvents((prev) => [event, ...prev].slice(0, MAX_EVENTS));
   }, []);
 
   const conversation = useConversation({
+    micMuted: isMicMuted,
     onConnect: () => {
       setIsSessionActive(true);
     },
     onDisconnect: () => {
       setIsSessionActive(false);
+      setIsMicMuted(false);
     },
     onMessage: (message) => {
       if (message.source === "ai" && typeof message.message === "string") {
@@ -112,6 +123,15 @@ export function FlatScoutAgent() {
             score: params.score as number,
             stage: "details_pulled",
             lastUpdatedAt: new Date().toISOString(),
+            feesSummary: parseStringList(params.fees_summary),
+            petPolicySummary: parseStringList(params.pet_policy_summary),
+            parkingSummary: parseStringList(params.parking_summary),
+            leaseTermsSummary: parseStringList(params.lease_terms_summary),
+            availabilitySummary: parseStringList(params.availability_summary),
+            floorPlanSummary: parseStringList(params.floor_plan_summary),
+            amenitiesSummary: parseStringList(params.amenities_summary),
+            qualificationSummary: parseStringList(params.qualification_summary),
+            sourceProvenance: parseStringList(params.source_provenance),
           };
 
           const existingIndex = prev.findIndex((listing) => listing.id === listingId);
@@ -243,6 +263,15 @@ export function FlatScoutAgent() {
           ? params.live_check_summary
           : undefined;
         const highlights = parseStringList(params.highlights);
+        const feesSummary = parseStringList(params.fees_summary);
+        const petPolicySummary = parseStringList(params.pet_policy_summary);
+        const parkingSummary = parseStringList(params.parking_summary);
+        const leaseTermsSummary = parseStringList(params.lease_terms_summary);
+        const availabilitySummary = parseStringList(params.availability_summary);
+        const floorPlanSummary = parseStringList(params.floor_plan_summary);
+        const amenitiesSummary = parseStringList(params.amenities_summary);
+        const qualificationSummary = parseStringList(params.qualification_summary);
+        const sourceProvenance = parseStringList(params.source_provenance);
 
         setListings((prev) =>
           prev.map((listing) =>
@@ -255,6 +284,31 @@ export function FlatScoutAgent() {
                   deepDiveNotes: deepDiveNotes.length > 0 ? deepDiveNotes : listing.deepDiveNotes,
                   liveCheckSummary: liveCheckSummary || listing.liveCheckSummary,
                   highlights: highlights.length > 0 ? highlights : listing.highlights,
+                  feesSummary: feesSummary.length > 0 ? feesSummary : listing.feesSummary,
+                  petPolicySummary:
+                    petPolicySummary.length > 0 ? petPolicySummary : listing.petPolicySummary,
+                  parkingSummary:
+                    parkingSummary.length > 0 ? parkingSummary : listing.parkingSummary,
+                  leaseTermsSummary:
+                    leaseTermsSummary.length > 0
+                      ? leaseTermsSummary
+                      : listing.leaseTermsSummary,
+                  availabilitySummary:
+                    availabilitySummary.length > 0
+                      ? availabilitySummary
+                      : listing.availabilitySummary,
+                  floorPlanSummary:
+                    floorPlanSummary.length > 0 ? floorPlanSummary : listing.floorPlanSummary,
+                  amenitiesSummary:
+                    amenitiesSummary.length > 0 ? amenitiesSummary : listing.amenitiesSummary,
+                  qualificationSummary:
+                    qualificationSummary.length > 0
+                      ? qualificationSummary
+                      : listing.qualificationSummary,
+                  sourceProvenance:
+                    sourceProvenance.length > 0
+                      ? sourceProvenance
+                      : listing.sourceProvenance,
                   lastUpdatedAt: new Date().toISOString(),
                 }
               : listing
@@ -295,6 +349,7 @@ export function FlatScoutAgent() {
       setEvents([]);
       setTranscript([]);
       setSearchStatus({ status: "idle", message: "" });
+      setIsMicMuted(false);
 
       const res = await fetch(`${API_URL}/api/get-signed-url`, {
         credentials: "include",
@@ -318,6 +373,7 @@ export function FlatScoutAgent() {
   const endSession = useCallback(async () => {
     await conversation.endSession();
     setIsSessionActive(false);
+    setIsMicMuted(false);
   }, [conversation]);
 
   return (
@@ -326,12 +382,14 @@ export function FlatScoutAgent() {
       <div className="flex min-h-[52svh] w-full flex-col border-b border-border lg:min-h-0 lg:w-2/5 lg:min-w-[320px] lg:border-b-0 lg:border-r">
         <VoicePanel
           isSessionActive={isSessionActive}
+          isMicMuted={conversation.micMuted ?? isMicMuted}
           isSpeaking={conversation.isSpeaking}
           status={conversation.status}
           transcript={transcript}
           searchStatus={searchStatus}
           onStartSession={startSession}
           onEndSession={endSession}
+          onToggleMute={() => setIsMicMuted((current) => !current)}
         />
       </div>
 

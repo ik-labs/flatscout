@@ -17,6 +17,17 @@ export interface Listing {
   parking?: string;
   laundry?: string;
   moveInDate?: string;
+  availabilitySummary?: string[];
+  floorPlans?: string[];
+  feesBreakdown?: string[];
+  petDetails?: string[];
+  parkingDetails?: string[];
+  leaseTermsDetail?: string[];
+  amenitiesDetail?: string[];
+  qualificationRequirements?: string[];
+  sourceProvenance?: string[];
+  verificationSummary?: string[];
+  quietNotes?: string[];
 }
 
 export interface Warning {

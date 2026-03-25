@@ -5,22 +5,26 @@ import { cn } from "@/lib/utils";
 
 interface VoicePanelProps {
   isSessionActive: boolean;
+  isMicMuted: boolean;
   isSpeaking: boolean;
   status: string;
   transcript: TranscriptMessage[];
   searchStatus: SearchStatus;
   onStartSession: () => void;
   onEndSession: () => void;
+  onToggleMute: () => void;
 }
 
 export function VoicePanel({
   isSessionActive,
+  isMicMuted,
   isSpeaking,
   status,
   transcript,
   searchStatus,
   onStartSession,
   onEndSession,
+  onToggleMute,
 }: VoicePanelProps) {
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
@@ -86,6 +90,22 @@ export function VoicePanel({
         )}
       </div>
 
+      {isSessionActive && (
+        <div className="flex justify-center px-4 pb-4 sm:px-6">
+          <button
+            onClick={onToggleMute}
+            className={cn(
+              "w-full max-w-sm rounded-full border px-8 py-2.5 text-xs font-medium uppercase tracking-[0.18em] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-950",
+              isMicMuted
+                ? "border-amber-400/40 bg-amber-400/12 text-amber-200 hover:bg-amber-400/18 focus:ring-amber-400"
+                : "border-white/12 bg-white/6 text-gray-200 hover:bg-white/10 focus:ring-white/30"
+            )}
+          >
+            {isMicMuted ? "Unmute Mic" : "Mute Mic"}
+          </button>
+        </div>
+      )}
+
       {/* Search Status */}
       {searchStatus.status !== "idle" && (
         <div className="mx-4 mb-3 rounded-lg border border-white/10 bg-white/5 px-4 py-2 sm:mx-6">
@@ -97,7 +117,10 @@ export function VoicePanel({
             ) : (
               <div className="mt-1 h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber-400" />
             )}
-            <span className="text-xs text-gray-300">{searchStatus.message}</span>
+            <span className="text-xs text-gray-300">
+              {searchStatus.message}
+              {isSessionActive && isMicMuted ? " • Mic muted for narration" : ""}
+            </span>
           </div>
         </div>
       )}
