@@ -5,6 +5,11 @@ import { logger } from "hono/logger";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import path from "node:path";
+import {
+  requireAppAuth,
+  requireToolSecret,
+} from "./lib/auth";
+import authRoutes from "./routes/auth";
 import searchListings from "./routes/search-listings";
 import scrapeListing from "./routes/scrape-listing";
 import deepDive from "./routes/deep-dive";
@@ -24,10 +29,18 @@ app.use(
       "http://localhost:3000",
       "https://flatscout.inkryptislabs.com",
     ],
+    credentials: true,
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type"],
   })
 );
+
+app.use("/api/get-signed-url", requireAppAuth);
+app.use("/api/search-listings", requireToolSecret);
+app.use("/api/scrape-listing", requireToolSecret);
+app.use("/api/deep-dive", requireToolSecret);
+app.use("/api/verify-neighborhood", requireToolSecret);
+app.use("/api/interact-page", requireToolSecret);
 
 // Health check
 app.get("/api/health", (c) => {
@@ -35,6 +48,7 @@ app.get("/api/health", (c) => {
 });
 
 // API routes
+app.route("/", authRoutes);
 app.route("/", getSignedUrl);
 app.route("/", searchListings);
 app.route("/", scrapeListing);

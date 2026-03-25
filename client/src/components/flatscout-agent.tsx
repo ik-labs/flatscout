@@ -100,7 +100,9 @@ export function FlatScoutAgent() {
 
   const startSession = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/get-signed-url`);
+      const res = await fetch(`${API_URL}/api/get-signed-url`, {
+        credentials: "include",
+      });
       const data = await res.json();
 
       if (data.error) {
