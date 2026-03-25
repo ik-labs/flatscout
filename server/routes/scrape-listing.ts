@@ -21,8 +21,11 @@ app.post("/api/scrape-listing", async (c) => {
 
   try {
     const result = await firecrawl.scrape(url, {
-      formats: ["json", "markdown", "links"],
-      jsonOptions: { schema: LISTING_SCHEMA },
+      formats: [
+        { type: "json", schema: LISTING_SCHEMA },
+        "markdown",
+        "links",
+      ],
     });
     // Cache result
     session.scrapedUrls = session.scrapedUrls || {};
