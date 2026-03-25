@@ -59,12 +59,15 @@ export function JudgeMetrics({ events, listings, warnings }: JudgeMetricsProps) 
         {metrics.map((metric) => (
           <div
             key={metric.label}
-            className="min-w-[112px] rounded-xl border border-border bg-card px-4 py-3 shadow-sm"
+            className="min-w-[116px] rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-sm"
           >
-            <div className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+            <div className="mb-3 h-px w-8 bg-white/14" />
+            <div className="text-[10px] font-medium uppercase tracking-[0.24em] text-zinc-500">
               {metric.label}
             </div>
-            <div className="mt-2 text-2xl font-semibold tracking-tight">{metric.value}</div>
+            <div className="mt-2 text-3xl font-semibold tracking-tight text-zinc-100">
+              {metric.value}
+            </div>
           </div>
         ))}
       </div>
