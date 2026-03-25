@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react"
 import { FlatScoutAgent } from "@/components/flatscout-agent"
 import { LoginScreen } from "@/components/login-screen"
-
-const API_URL = import.meta.env.VITE_API_URL || ""
+import { API_URL } from "@/lib/api"
 
 interface AuthState {
   enabled: boolean

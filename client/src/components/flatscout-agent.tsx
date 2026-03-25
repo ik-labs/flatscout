@@ -3,8 +3,7 @@ import { useState, useCallback } from "react";
 import type { Listing, Warning, SearchStatus, TranscriptMessage } from "@/lib/types";
 import { VoicePanel } from "@/components/voice-panel";
 import { ResearchDashboard } from "@/components/research-dashboard";
-
-const API_URL = import.meta.env.VITE_API_URL || "";
+import { API_URL } from "@/lib/api";
 
 export function FlatScoutAgent() {
   const [listings, setListings] = useState<Listing[]>([]);
