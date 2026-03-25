@@ -25,7 +25,14 @@ export function SearchStatusBar({ searchStatus }: SearchStatusBarProps) {
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-card px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
       <div className="flex items-center gap-3">
         <div className={cn("h-2.5 w-2.5 rounded-full", config.color, isActive && "animate-pulse")} />
-        <span className="text-sm font-medium">{config.label}</span>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-xs font-semibold tracking-wide text-white",
+            config.color
+          )}
+        >
+          {config.label}
+        </span>
       </div>
       <div className="min-w-0 flex-1">
         {searchStatus.message && (
