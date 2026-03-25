@@ -67,7 +67,7 @@ function App() {
     <div className="dark relative">
       {authState.enabled ? (
         <button
-          className="absolute right-4 top-4 z-50 rounded-full border border-white/10 bg-black/50 px-4 py-2 text-xs font-medium text-white backdrop-blur transition hover:bg-black/70"
+          className="fixed bottom-4 right-4 z-50 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-xs font-medium text-white shadow-lg backdrop-blur transition hover:bg-black/70 md:absolute md:bottom-auto md:right-4 md:top-4"
           onClick={() => void handleLogout()}
           type="button"
         >

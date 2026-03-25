@@ -124,9 +124,9 @@ export function FlatScoutAgent() {
   }, [conversation]);
 
   return (
-    <div className="flex h-screen w-full bg-background">
+    <div className="flex min-h-screen w-full flex-col bg-background lg:h-screen lg:flex-row">
       {/* Voice Panel — Left 40% */}
-      <div className="w-2/5 min-w-[320px] border-r border-border flex flex-col">
+      <div className="flex min-h-[52svh] w-full flex-col border-b border-border lg:min-h-0 lg:w-2/5 lg:min-w-[320px] lg:border-b-0 lg:border-r">
         <VoicePanel
           isSessionActive={isSessionActive}
           isSpeaking={conversation.isSpeaking}
@@ -139,7 +139,7 @@ export function FlatScoutAgent() {
       </div>
 
       {/* Research Dashboard — Right 60% */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex min-h-[48svh] min-w-0 flex-1 flex-col overflow-hidden lg:min-h-0">
         <ResearchDashboard
           listings={listings}
           rankedListings={rankedListings}

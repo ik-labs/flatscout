@@ -28,7 +28,48 @@ export function ComparisonTable({ listings }: ComparisonTableProps) {
       <div className="border-b border-border px-4 py-3">
         <h3 className="text-sm font-semibold">Top Picks Comparison</h3>
       </div>
-      <div className="overflow-x-auto">
+      <div className="space-y-3 p-3 md:hidden">
+        {listings.map((listing, i) => (
+          <div key={listing.id || i} className="rounded-lg border border-border bg-background/60 p-3">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+                  Pick {i + 1}
+                </div>
+                <a
+                  href={listing.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-sm font-medium leading-snug hover:underline"
+                >
+                  {listing.title}
+                </a>
+                <div className="mt-1 text-[11px] text-muted-foreground">{listing.sourceSite}</div>
+              </div>
+              <Badge variant="outline" className={cn("shrink-0 font-mono text-xs", getScoreBadge(listing.score))}>
+                {listing.score}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="rounded-md bg-muted/60 px-2 py-2">
+                <div className="text-[10px] uppercase text-muted-foreground">Rent</div>
+                <div className="mt-1 font-mono text-foreground">${listing.rent?.toLocaleString()}</div>
+              </div>
+              <div className="rounded-md bg-muted/60 px-2 py-2">
+                <div className="text-[10px] uppercase text-muted-foreground">Sqft</div>
+                <div className="mt-1 font-mono text-foreground">
+                  {listing.sqft ? listing.sqft.toLocaleString() : "—"}
+                </div>
+              </div>
+              <div className="rounded-md bg-muted/60 px-2 py-2">
+                <div className="text-[10px] uppercase text-muted-foreground">BR</div>
+                <div className="mt-1 font-mono text-foreground">{listing.bedrooms}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
         <Table>
           <TableHeader>
             <TableRow>

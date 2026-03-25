@@ -20,7 +20,7 @@ export function ResearchDashboard({
   const globalWarnings = warnings.filter((w) => !w.listingId);
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-background p-6">
+    <div className="flex h-full min-h-full flex-col overflow-y-auto bg-background p-4 sm:p-6">
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold">Research Dashboard</h2>
@@ -60,7 +60,7 @@ export function ResearchDashboard({
           ))}
         </div>
       ) : (
-        <div className="flex flex-1 items-center justify-center">
+        <div className="flex min-h-[30svh] flex-1 items-center justify-center">
           <div className="text-center">
             <div className="mb-3 text-5xl">🔍</div>
             <p className="text-sm text-muted-foreground">
